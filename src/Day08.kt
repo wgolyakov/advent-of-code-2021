@@ -1,6 +1,27 @@
-import org.apache.commons.collections4.iterators.PermutationIterator
-
 fun main() {
+    fun deduceDigits(tenUniqueSignalPatterns: List<Set<Char>>): Map<Set<Char>, Int> {
+        val digits = Array<Set<Char>>(10) { emptySet() }
+        val digits069 = mutableListOf<Set<Char>>()
+        val digits235 = mutableListOf<Set<Char>>()
+        for (word in tenUniqueSignalPatterns) {
+            when (word.size) {
+                2 -> digits[1] = word
+                3 -> digits[7] = word
+                4 -> digits[4] = word
+                5 -> digits235.add(word)
+                6 -> digits069.add(word)
+                7 -> digits[8] = word
+            }
+        }
+        digits[2] = digits235.find { (it - digits[4] - digits[7]).size == 2 }!!
+        digits[3] = digits235.find { (it - digits[2]).size == 1 }!!
+        digits[5] = (digits235 - setOf(digits[2], digits[3])).first()
+        digits[9] = digits069.find { (it - digits[4] - digits[7]).size == 1 }!!
+        digits[0] = (digits069 - setOf(digits[9])).find { (it - digits[5]).size == 2 }!!
+        digits[6] = (digits069 - setOf(digits[0], digits[9])).first()
+        return digits.withIndex().associate { it.value to it.index }
+    }
+
     fun part1(input: List<String>): Int {
         var count = 0
         val uniqueSegments = setOf(2, 4, 3, 7)
@@ -11,50 +32,13 @@ fun main() {
         return count
     }
 
-    fun permutations(str: String): List<String> {
-        return PermutationIterator(str.toList()).asSequence().map { String(it.toCharArray()) }.toList()
-    }
-
-    fun strToBits(str: String, segments: String): Int {
-        var result = 0
-        for (c in str) {
-            result = result or (1 shl segments.indexOf(c))
-        }
-        return result
-    }
-
-    fun detectDigits(tenUniqueSignalPatterns: List<String>): Pair<Map<Int, Int>, String> {
-        for (s in permutations("abcdefg")) {
-            val bitsToDigit = mutableMapOf<Int, Int>()
-            bitsToDigit[strToBits("" + s[0] + s[1] + s[2]        + s[4] + s[5] + s[6], s)] = 0
-            bitsToDigit[strToBits("" +               s[2]               + s[5]       , s)] = 1
-            bitsToDigit[strToBits("" + s[0]        + s[2] + s[3] + s[4]        + s[6], s)] = 2
-            bitsToDigit[strToBits("" + s[0]        + s[2] + s[3]        + s[5] + s[6], s)] = 3
-            bitsToDigit[strToBits("" +        s[1] + s[2] + s[3]        + s[5]       , s)] = 4
-            bitsToDigit[strToBits("" + s[0] + s[1]        + s[3]        + s[5] + s[6], s)] = 5
-            bitsToDigit[strToBits("" + s[0] + s[1]        + s[3] + s[4] + s[5] + s[6], s)] = 6
-            bitsToDigit[strToBits("" + s[0]        + s[2]               + s[5]       , s)] = 7
-            bitsToDigit[strToBits("" + s[0] + s[1] + s[2] + s[3] + s[4] + s[5] + s[6], s)] = 8
-            bitsToDigit[strToBits("" + s[0] + s[1] + s[2] + s[3]        + s[5] + s[6], s)] = 9
-            val allDigits = mutableSetOf<Int>()
-            for (d in tenUniqueSignalPatterns) {
-                val n = bitsToDigit[strToBits(d, s)] ?: break
-                allDigits.add(n)
-            }
-            if (allDigits.size == 10) return Pair(bitsToDigit, s)
-        }
-        error("Wrong ten unique signal patterns: $tenUniqueSignalPatterns")
-    }
-
     fun part2(input: List<String>): Int {
         var result = 0
         for (line in input) {
-            val (tenUniqueSignalPatterns, fourDigitOutputValue) = line.split('|').map { it.trim().split(' ') }
-            val (bitsToDigit, segments) = detectDigits(tenUniqueSignalPatterns)
-            var number = ""
-            for (digit in fourDigitOutputValue)
-                number += bitsToDigit[strToBits(digit, segments)].toString()
-            result += number.toInt()
+            val (tenUniqueSignalPatterns, fourDigitOutputValue) = line.split('|')
+                .map { it.trim().split(' ').map { word -> word.toCharArray().toSet() } }
+            val digitsMap = deduceDigits(tenUniqueSignalPatterns)
+            result += fourDigitOutputValue.map { digitsMap[it] }.joinToString("").toInt()
         }
         return result
     }
