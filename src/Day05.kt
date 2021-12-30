@@ -1,9 +1,9 @@
 import kotlin.math.*
 
-data class Point(val x: Int, val y: Int)
-data class Line(val a: Point, val b: Point)
-
 fun main() {
+    data class Point(val x: Int, val y: Int)
+    data class Line(val a: Point, val b: Point)
+
     fun parseInput(input: List<String>): List<Line> {
         val lines = mutableListOf<Line>()
         for (line in input) {
